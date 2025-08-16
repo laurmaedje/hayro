@@ -199,8 +199,8 @@ impl<'a> Readable<'a> for Object<'a> {
 /// An identifier for a PDF object.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ObjectIdentifier {
-    pub(crate) obj_num: i32,
-    pub(crate) gen_num: i32,
+    pub obj_num: i32,
+    pub gen_num: i32,
 }
 
 impl ObjectIdentifier {

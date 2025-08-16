@@ -75,8 +75,6 @@ restricted in the targets you can build to. Because of this, I recommend not ena
 unless you absolutely need to be able to support such images.
 */
 
-#![deny(missing_docs)]
-
 use std::sync::Arc;
 
 pub(crate) mod data;

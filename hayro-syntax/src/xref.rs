@@ -141,6 +141,7 @@ impl XRef {
             return Err(XRefError::Encrypted);
         }
 
+        let root_ref = trailer_dict.get_ref(ROOT).ok_or(XRefError::Unknown)?;
         let root = trailer_dict.get::<Dict>(ROOT).ok_or(XRefError::Unknown)?;
         let pages_ref = root.get_ref(PAGES).ok_or(XRefError::Unknown)?;
         let version = root
@@ -148,6 +149,7 @@ impl XRef {
             .and_then(|v| PdfVersion::from_bytes(v.deref()));
 
         let td = TrailerData {
+            root_ref: root_ref.into(),
             pages_ref: pages_ref.into(),
             version,
         };
@@ -183,7 +185,7 @@ impl XRef {
         }
     }
 
-    pub(crate) fn trailer_data(&self) -> &TrailerData {
+    pub fn trailer_data(&self) -> &TrailerData {
         match &self.0 {
             Inner::Dummy => unreachable!(),
             Inner::Some(r) => &r.trailer_data,
@@ -199,6 +201,19 @@ impl XRef {
 
                 iter.next().and_then(|k| self.get(*k))
             }),
+        }
+    }
+
+    pub fn identifiers(&self) -> Vec<ObjectIdentifier> {
+        let mut ids = vec![];
+        match &self.0 {
+            Inner::Dummy => unimplemented!(),
+            Inner::Some(r) => {
+                let locked = r.map.read().unwrap();
+                ids.extend(locked.xref_map.keys().copied());
+                ids.sort_by_key(|id| (id.obj_num, id.gen_num));
+                ids
+            }
         }
     }
 
@@ -328,7 +343,8 @@ struct MapRepr {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct TrailerData {
+pub struct TrailerData {
+    pub root_ref: ObjectIdentifier,
     pub pages_ref: ObjectIdentifier,
     pub version: Option<PdfVersion>,
 }
@@ -336,6 +352,7 @@ pub(crate) struct TrailerData {
 impl TrailerData {
     pub fn dummy() -> Self {
         Self {
+            root_ref: ObjectIdentifier::new(0, 0),
             pages_ref: ObjectIdentifier::new(0, 0),
             version: None,
         }
